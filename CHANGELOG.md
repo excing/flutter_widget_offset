@@ -1,3 +1,7 @@
+## 1.0.1
+
+- add API document
+
 ## 1.0.0
 
 - add `OffsetChangeObserver`
