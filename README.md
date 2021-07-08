@@ -1,14 +1,14 @@
 # flutter-widget-offset
 
-一个类库，用于获取和监听widget到根布局四边的偏移量。
+一个类库，用于获取和观察 `widget` 到根布局边缘的偏移量。
 此类库也适用于对话框（`showDialog`）。
 
-A class library for obtaining and listening the offset of the widget to the four sides of the root layout.
+A class library for obtaining and listening the offset of the widget to the edge of the root layout.
 This type of library is also suitable for dialogs(`showDialog`).
 
 ## Use `OffsetDetector`
 
-Use `OffsetDetector` directly to get the offset of the widget.
+Use `OffsetDetector` directly to get the offset of the widget to the edge of the root layout.
 
 ```dart
 OffsetDetector(
@@ -26,7 +26,7 @@ OffsetDetector(
 
 ## Use `OffsetChangeObserver`
 
-Use `OffsetChangeObserver` to observe the offset of the widget.
+Use `OffsetChangeObserver` to observe the offset of the widget to the edge of the root layout.
 
 ```dart
 class OffsetDetector extends StatefulWidget {
