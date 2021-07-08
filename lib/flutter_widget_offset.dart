@@ -46,9 +46,7 @@ typedef OnChanged = void Function(
 /// soft keyboard display and hiding, etc.,
 /// [onChanged] will be called.
 ///
-/// {@tool snippet}
-///
-/// This snippet will print [size], [offset], [rootPadding] when the widget is offset..
+/// This snippet will print [size], [offset], [rootPadding] when the widget is offset.
 ///
 /// ```dart
 /// Padding(
@@ -66,9 +64,7 @@ typedef OnChanged = void Function(
 ///       )),
 /// )
 /// ```
-/// {@end-tool}
 class OffsetDetector extends StatefulWidget {
-
   /// Create a widget whose offset state needs to be observed.
   ///
   /// The [onChanged] argument must not be null.
@@ -78,6 +74,7 @@ class OffsetDetector extends StatefulWidget {
 
   /// Callback method when offset occurs
   final OnChanged onChanged;
+
   /// child is the widget that needs to be observed
   final Widget child;
 
@@ -129,7 +126,7 @@ class _OffsetDetectorState extends State<OffsetDetector>
 ///
 /// Use of this observer requires widget inheritance [WidgetsBindingObserver]
 class OffsetChangeObserver {
-  static const int waitMetricsTimeoutMillis = 1000;
+  static const int _waitMetricsTimeoutMillis = 1000;
 
   /// Create an observer who needs to observe the offset state of the widget.
   ///
@@ -142,6 +139,7 @@ class OffsetChangeObserver {
 
   /// context is the context object of the widget that needs to be observed.
   final BuildContext context;
+
   /// Callback method when offset occurs.
   final OnChanged onChanged;
 
@@ -248,8 +246,11 @@ class OffsetChangeObserver {
         unsafeDownAreaHeight -
         _boxHeight -
         boxAbsY;
-    double widgetOffsetRight =
-        windowWidth - rootPadding.left - rootPadding.right - _boxWidth - boxAbsX;
+    double widgetOffsetRight = windowWidth -
+        rootPadding.left -
+        rootPadding.right -
+        _boxWidth -
+        boxAbsX;
 
     this.onChanged(
         box.size,
@@ -295,7 +296,7 @@ class OffsetChangeObserver {
 
       int timer = 0;
       // viewInsets or MediaQuery have changed once keyboard has toggled or orientation has changed
-      while (_widgetMounted && timer < waitMetricsTimeoutMillis) {
+      while (_widgetMounted && timer < _waitMetricsTimeoutMillis) {
         // reduce delay if showDialog ever exposes detection of animation end
         await Future.delayed(const Duration(milliseconds: 170));
         timer += 170;
