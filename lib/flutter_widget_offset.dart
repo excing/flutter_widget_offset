@@ -27,18 +27,58 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 
-// 小部件的界面偏移量发生改变
+/// OnChanged is the method called when the widget is offset.
+/// It has three parameters, [size], [offset] and [rootPadding].
+///
+/// The [size] is the size of the widget after it is offset.
+/// The [offset] is the offset of the widget from the edge of the root layout.
+/// The [rootPadding] is the padding value from the root layout to the edge of the screen.
 typedef OnChanged = void Function(
   Size size,
   EdgeInsets offset,
   EdgeInsets rootPadding,
 );
 
+/// OffsetDetector is a widget that encapsulates [OffsetChangeObserver].
+///
+/// When the screen position of [child] changes,
+/// such as horizontal and vertical screen switching,
+/// soft keyboard display and hiding, etc.,
+/// [onChanged] will be called.
+///
+/// {@tool snippet}
+///
+/// This snippet will print [size], [offset], [rootPadding] when the widget is offset..
+///
+/// ```dart
+/// Padding(
+///   padding: EdgeInsets.fromLTRB(8, 0, 8, 3),
+///   child: OffsetDetector(
+///       onChanged: (Size size, EdgeInsets offset, EdgeInsets rootPadding) {
+///           print("The widget size: ${size.width}, ${size.height}");
+///           print(
+///            "The offset to edge of root(ltrb): ${offset.left}, ${offset.top}, ${offset.right}, ${offset.bottom}");
+///           print(
+///            "the root padding: ${rootPadding.left}, ${rootPadding.top}, ${rootPadding.right}, ${rootPadding.bottom}");
+///       },
+///       child: TextField(
+///         style: textFieldStyle,
+///       )),
+/// )
+/// ```
+/// {@end-tool}
 class OffsetDetector extends StatefulWidget {
+
+  /// Create a widget whose offset state needs to be observed.
+  ///
+  /// The [onChanged] argument must not be null.
+  /// The [child] argument must not be null.
   OffsetDetector({Key? key, required this.onChanged, required this.child})
       : super(key: key);
 
+  /// Callback method when offset occurs
   final OnChanged onChanged;
+  /// child is the widget that needs to be observed
   final Widget child;
 
   @override
@@ -85,38 +125,56 @@ class _OffsetDetectorState extends State<OffsetDetector>
   }
 }
 
+/// OffsetChangeObserver will observe the offset status of the widget.
+///
+/// Use of this observer requires widget inheritance [WidgetsBindingObserver]
 class OffsetChangeObserver {
   static const int waitMetricsTimeoutMillis = 1000;
 
+  /// Create an observer who needs to observe the offset state of the widget.
+  ///
+  /// The [context] argument must not be null.
+  /// The [onChanged] argument must not be null.
   OffsetChangeObserver({
     required this.context,
     required this.onChanged,
   });
 
+  /// context is the context object of the widget that needs to be observed.
   final BuildContext context;
+  /// Callback method when offset occurs.
   final OnChanged onChanged;
 
   final Duration _resizeOnScrollRefreshRate = const Duration(milliseconds: 500);
   ScrollPosition? _scrollPosition;
   Timer? _resizeOnScrollTimer;
 
-  bool widgetMounted = true;
-  double boxWidth = 100.0;
-  double boxHeight = 100.0;
+  bool _widgetMounted = true;
+  double _boxWidth = 100.0;
+  double _boxHeight = 100.0;
 
+  /// Initialization state.
+  ///
+  /// It is usually called in the [State.initState] method of [State].
   void onInitState() {
     WidgetsBinding.instance!.addPostFrameCallback((duration) {
       // calculate initial suggestions list size
-      this.resize();
+      this._resize();
     });
   }
 
+  /// Called when the application's dimensions change.
+  ///
+  /// It is usually called in the [WidgetsBindingObserver.didChangeMetrics] method of [WidgetsBindingObserver]
   Future<void> onChangeMetrics() async {
     if (await _waitChangeMetrics()) {
-      resize();
+      _resize();
     }
   }
 
+  /// Called when a dependency of this [State] object changes.
+  ///
+  /// It is usually called in the [WidgetsBindingObserver.didChangeDependencies] method of [WidgetsBindingObserver]
   void onChangeDependencies() {
     ScrollableState? scrollableState = Scrollable.of(context);
     if (scrollableState != null) {
@@ -128,16 +186,19 @@ class OffsetChangeObserver {
     }
   }
 
+  /// Called when this object is removed from the tree permanently.
+  ///
+  /// It is usually called in the [State.dispose] method of [State].
   void onDispose() {
-    this.widgetMounted = false;
+    this._widgetMounted = false;
     _resizeOnScrollTimer?.cancel();
     _scrollPosition?.removeListener(_scrollResizeListener);
   }
 
-  void resize() {
+  void _resize() {
     // check to see if widget is still mounted
     // user may have closed the widget with the keyboard still open
-    if (widgetMounted) {
+    if (_widgetMounted) {
       _adjustMaxHeightAndOrientation();
     }
   }
@@ -150,8 +211,8 @@ class OffsetChangeObserver {
       return;
     }
 
-    boxWidth = box.size.width;
-    boxHeight = box.size.height;
+    _boxWidth = box.size.width;
+    _boxHeight = box.size.height;
 
     Offset boxGlobalOffset = box.localToGlobal(Offset.zero);
     // left of widget box
@@ -185,12 +246,12 @@ class OffsetChangeObserver {
     double widgetOffsetBottom = windowHeight -
         keyboardHeight -
         unsafeDownAreaHeight -
-        boxHeight -
+        _boxHeight -
         boxAbsY;
     double widgetOffsetRight =
-        windowWidth - rootPadding.left - rootPadding.right - boxWidth - boxAbsX;
+        windowWidth - rootPadding.left - rootPadding.right - _boxWidth - boxAbsX;
 
-    onChanged(
+    this.onChanged(
         box.size,
         EdgeInsets.fromLTRB(widgetOffsetLeft, widgetOffsetTop,
             widgetOffsetRight, widgetOffsetBottom),
@@ -204,11 +265,11 @@ class OffsetChangeObserver {
       // Scroll started
       _resizeOnScrollTimer =
           Timer.periodic(_resizeOnScrollRefreshRate, (timer) {
-        resize();
+        _resize();
       });
     } else {
       // Scroll finished
-      resize();
+      _resize();
     }
   }
 
@@ -226,7 +287,7 @@ class OffsetChangeObserver {
 
   /// Delays until the keyboard has toggled or the orientation has fully changed
   Future<bool> _waitChangeMetrics() async {
-    if (widgetMounted) {
+    if (_widgetMounted) {
       // initial viewInsets which are before the keyboard is toggled
       EdgeInsets initial = MediaQuery.of(context).viewInsets;
       // initial MediaQuery for orientation change
@@ -234,12 +295,12 @@ class OffsetChangeObserver {
 
       int timer = 0;
       // viewInsets or MediaQuery have changed once keyboard has toggled or orientation has changed
-      while (widgetMounted && timer < waitMetricsTimeoutMillis) {
+      while (_widgetMounted && timer < waitMetricsTimeoutMillis) {
         // reduce delay if showDialog ever exposes detection of animation end
         await Future.delayed(const Duration(milliseconds: 170));
         timer += 170;
 
-        if (widgetMounted &&
+        if (_widgetMounted &&
             (MediaQuery.of(context).viewInsets != initial ||
                 _findRootMediaQuery() != initialRootMediaQuery)) {
           return true;
