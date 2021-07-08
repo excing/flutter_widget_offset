@@ -1,3 +1,7 @@
+## 1.0.2
+
+- format `lib/flutter_widget_offset.dart`
+
 ## 1.0.1
 
 - add API document
