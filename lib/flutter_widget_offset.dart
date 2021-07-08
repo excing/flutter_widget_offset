@@ -28,22 +28,73 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 
 // 小部件的界面偏移量发生改变
-typedef OffsetChanged = void Function(
-    Size size,
-    EdgeInsets offset,
-    EdgeInsets rootPadding,
-    );
+typedef OnChanged = void Function(
+  Size size,
+  EdgeInsets offset,
+  EdgeInsets rootPadding,
+);
 
-class OffsetChangedListener {
+class OffsetDetector extends StatefulWidget {
+  OffsetDetector({Key? key, required this.onChanged, required this.child})
+      : super(key: key);
+
+  final OnChanged onChanged;
+  final Widget child;
+
+  @override
+  State<StatefulWidget> createState() {
+    return _OffsetDetectorState();
+  }
+}
+
+class _OffsetDetectorState extends State<OffsetDetector>
+    with WidgetsBindingObserver {
+  late OffsetChangeObserver _observer;
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance!.addObserver(this);
+    _observer =
+        OffsetChangeObserver(context: context, onChanged: widget.onChanged);
+    _observer.onInitState();
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    _observer.onChangeMetrics();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _observer.onChangeDependencies();
+  }
+
+  @override
+  void dispose() {
+    _observer.onDispose();
+    WidgetsBinding.instance!.removeObserver(this);
+    super.dispose();
+  }
+}
+
+class OffsetChangeObserver {
   static const int waitMetricsTimeoutMillis = 1000;
 
-  OffsetChangedListener({
+  OffsetChangeObserver({
     required this.context,
     required this.onChanged,
   });
 
   final BuildContext context;
-  final OffsetChanged onChanged;
+  final OnChanged onChanged;
 
   final Duration _resizeOnScrollRefreshRate = const Duration(milliseconds: 500);
   ScrollPosition? _scrollPosition;
@@ -103,9 +154,12 @@ class OffsetChangedListener {
     boxHeight = box.size.height;
 
     Offset boxGlobalOffset = box.localToGlobal(Offset.zero);
-    // top of text box
-    double textBoxAbsY = boxGlobalOffset.dy;
+    // left of widget box
+    double boxAbsX = boxGlobalOffset.dx;
+    // top of widget box
+    double boxAbsY = boxGlobalOffset.dy;
 
+    // width of window
     double windowWidth = MediaQuery.of(context).size.width;
     // height of window
     double windowHeight = MediaQuery.of(context).size.height;
@@ -117,33 +171,29 @@ class OffsetChangedListener {
 
     // height of keyboard
     double keyboardHeight = rootMediaQuery.data.viewInsets.bottom;
+    // recalculate keyboard absolute y value
+    double keyboardAbsY = windowHeight - keyboardHeight;
 
     EdgeInsets rootPadding = rootMediaQuery.data.padding;
     double unsafeUpAreaHeight = rootPadding.top;
     double unsafeDownAreaHeight = keyboardHeight == 0 ? rootPadding.bottom : 0;
-    // recalculate keyboard absolute y value
-    double keyboardAbsY = windowHeight - keyboardHeight;
 
-    double widgetTop = textBoxAbsY > keyboardAbsY
+    double widgetOffsetTop = boxAbsY > keyboardAbsY
         ? keyboardAbsY - unsafeUpAreaHeight
-        : textBoxAbsY - unsafeUpAreaHeight;
-    double widgetLeft = boxGlobalOffset.dx - rootPadding.left;
-    double widgetBottom = windowHeight -
+        : boxAbsY - unsafeUpAreaHeight;
+    double widgetOffsetLeft = boxAbsX - rootPadding.left;
+    double widgetOffsetBottom = windowHeight -
         keyboardHeight -
         unsafeDownAreaHeight -
         boxHeight -
-        textBoxAbsY;
-    double widgetRight = windowWidth -
-        rootPadding.left -
-        rootPadding.right -
-        boxWidth -
-        boxGlobalOffset.dx;
+        boxAbsY;
+    double widgetOffsetRight =
+        windowWidth - rootPadding.left - rootPadding.right - boxWidth - boxAbsX;
 
-    // print(
-    //     'boxSize: ${box.size}, widgetTop: $widgetTop, widgetLeft: $widgetLeft, widgetBottom: $widgetBottom, widgetRight: $widgetRight');
     onChanged(
         box.size,
-        EdgeInsets.fromLTRB(widgetLeft, widgetTop, widgetRight, widgetBottom),
+        EdgeInsets.fromLTRB(widgetOffsetLeft, widgetOffsetTop,
+            widgetOffsetRight, widgetOffsetBottom),
         rootPadding);
   }
 
@@ -154,8 +204,8 @@ class OffsetChangedListener {
       // Scroll started
       _resizeOnScrollTimer =
           Timer.periodic(_resizeOnScrollRefreshRate, (timer) {
-            resize();
-          });
+        resize();
+      });
     } else {
       // Scroll finished
       resize();
