@@ -1,3 +1,9 @@
+## 1.0.0
+
+- add `OffsetChangeObserver`
+- add `OffsetDetector` widget
+- add widget offset example
+
 ## 0.0.1
 
-* TODO: Describe initial release.
+* Describe initial release.
