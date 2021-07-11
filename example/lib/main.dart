@@ -1,12 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_widget_offset/flutter_widget_offset.dart';
 
 void main() {
   runApp(MyApp());
 }
 
+/// flutter_widget_offset example application
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -20,9 +22,11 @@ class MyApp extends StatelessWidget {
   }
 }
 
+/// flutter_widget_offset example application home page
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key? key, required this.title}) : super(key: key);
 
+  /// home page title
   final String title;
 
   @override
@@ -40,6 +44,10 @@ class _MyHomePageState extends State<MyHomePage> {
   AxisDirection _overlayEntryDir = AxisDirection.down;
 
   bool _isOpened = false;
+  bool _isAboveCursor = false;
+
+  final EdgeInsets _textFieldContentPadding = EdgeInsets.fromLTRB(3, 8, 3, 8);
+  late TextStyle _textFieldStyle;
 
   @override
   void initState() {
@@ -69,13 +77,21 @@ class _MyHomePageState extends State<MyHomePage> {
                   maxHeight: _overlayEntryHeight,
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      "Pop Window",
-                      style: TextStyle(fontSize: 32),
-                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Pop Window",
+                          style: TextStyle(fontSize: 32),
+                        ),
+                        Switch(
+                          value: _isAboveCursor,
+                          onChanged: _onOverlayPositionChanged,
+                        ),
+                      ],
+                    )
                   ],
                 ),
               ),
@@ -102,36 +118,55 @@ class _MyHomePageState extends State<MyHomePage> {
     if (this._isOpened) return;
     assert(this._overlayEntry != null);
     Overlay.of(context)!.insert(this._overlayEntry!);
-    setState(() {
-      this._isOpened = true;
-    });
+    this._isOpened = true;
   }
 
   void _closeSuggestionBox() {
     if (!this._isOpened) return;
     assert(this._overlayEntry != null);
     this._overlayEntry!.remove();
-    setState(() {
-      this._isOpened = false;
-    });
+    this._isOpened = false;
+  }
+
+  void _updateSuggestionBox() {
+    if (!this._isOpened) return;
+    assert(this._overlayEntry != null);
+    this._overlayEntry!.markNeedsBuild();
   }
 
   void _onOffsetChanged(Size size, EdgeInsets offset, EdgeInsets rootPadding) {
     _overlayEntryWidth = size.width;
 
-    print("offset top: ${offset.top}, offset bottom: ${offset.bottom}");
+    // print("offset top: ${offset.top}, offset bottom: ${offset.bottom}");
     if (120 < offset.bottom || offset.top < offset.bottom) {
       _overlayEntryDir = AxisDirection.down;
       _overlayEntryHeight = offset.bottom - 10;
       _overlayEntryY = 5;
     } else {
       _overlayEntryDir = AxisDirection.up;
-      _overlayEntryHeight = offset.top - 10;
-      _overlayEntryY = -size.height - 5;
+      if (_isAboveCursor) {
+        _overlayEntryHeight = offset.top + size.height - _courseHeight - 5;
+        _overlayEntryY = -_courseHeight;
+      } else {
+        _overlayEntryHeight = offset.top - 5;
+        _overlayEntryY = -size.height;
+      }
     }
 
-    assert(_overlayEntry != null);
-    _overlayEntry!.markNeedsBuild();
+    _updateSuggestionBox();
+  }
+
+  double get _courseHeight =>
+      (_textFieldStyle.fontSize ?? 16) +
+      _textFieldContentPadding.bottom +
+      _textFieldContentPadding.top;
+
+  void _onOverlayPositionChanged(bool value) {
+    setState(() {
+      this._isAboveCursor = value;
+    });
+    _onOffsetChanged(
+        _controller.size, _controller.offset, _controller.rootPadding);
   }
 
   void _onTextChanged(String value) {
@@ -148,19 +183,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final textFieldStyle = Theme.of(context).textTheme.headline5;
+    _textFieldStyle = Theme.of(context).textTheme.headline5!;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
         actions: [
           Switch(
-            value: _isOpened,
-            onChanged: (value) {
-              if (value)
-                _openSuggestionBox();
-              else
-                _closeSuggestionBox();
-            },
+            value: _isAboveCursor,
+            onChanged: _onOverlayPositionChanged,
           ),
         ],
       ),
@@ -177,9 +207,10 @@ class _MyHomePageState extends State<MyHomePage> {
                     minLines: 1,
                     maxLines: 5,
                     onChanged: _onTextChanged,
-                    style: textFieldStyle,
+                    style: _textFieldStyle,
                     textInputAction: TextInputAction.none,
                     decoration: InputDecoration(
+                      contentPadding: _textFieldContentPadding,
                       hintText: "Write something",
                     ),
                   )),
