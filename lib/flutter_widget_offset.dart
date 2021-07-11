@@ -27,17 +27,22 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 
-/// OnChanged is the method called when the widget is offset.
+/// OffsetChangedCallback is the method called when the widget is offset.
 /// It has three parameters, [size], [offset] and [rootPadding].
 ///
 /// The [size] is the size of the widget after it is offset.
 /// The [offset] is the offset of the widget from the edge of the root layout.
 /// The [rootPadding] is the padding value from the root layout to the edge of the screen.
-typedef OnChanged = void Function(
+typedef OffsetChangedCallback = void Function(
   Size size,
   EdgeInsets offset,
   EdgeInsets rootPadding,
 );
+
+/// KeyboardStateCallback is the callback of the soft keyboard display state.
+///
+/// The [state] is soft keyboard display state, if true, it means display.
+typedef KeyboardStateCallback = void Function(bool state);
 
 /// OffsetDetectorController is used to control
 /// and notify the OffsetDetector widget.
@@ -50,6 +55,9 @@ class OffsetDetectorController extends ChangeNotifier {
 
   /// The [rootPadding] is the padding value from the root layout to the edge of the screen.
   EdgeInsets rootPadding = EdgeInsets.zero;
+
+  /// The [keyboardState] is keyboard display status
+  bool keyboardState = false;
 
   /// Notify [OffsetDetector] that the status of his [child] has changed.
   void notifyStateChanged() {
@@ -92,11 +100,15 @@ class OffsetDetector extends StatefulWidget {
     required this.onChanged,
     required this.child,
     OffsetDetectorController? controller,
+    this.onKeyboard,
   })  : this.controller = controller ?? OffsetDetectorController(),
         super(key: key);
 
   /// Callback method when offset occurs
-  final OnChanged onChanged;
+  final OffsetChangedCallback onChanged;
+
+  /// Callback method when offset occurs
+  final KeyboardStateCallback? onKeyboard;
 
   /// child is the widget that needs to be observed
   final Widget child;
@@ -123,8 +135,10 @@ class _OffsetDetectorState extends State<OffsetDetector>
   void initState() {
     super.initState();
     WidgetsBinding.instance!.addObserver(this);
-    _observer =
-        OffsetChangeObserver(context: context, onChanged: _handleChanged);
+    _observer = OffsetChangeObserver(
+        context: context,
+        onChanged: _handleChanged,
+        onKeyboard: _handleKeyboardState);
     _observer.onInitState();
     widget.controller.addListener(_handleChangeState);
   }
@@ -169,6 +183,12 @@ class _OffsetDetectorState extends State<OffsetDetector>
     widget.controller.rootPadding = rootPadding;
     widget.onChanged(size, offset, rootPadding);
   }
+
+  void _handleKeyboardState(bool state) {
+    widget.controller.keyboardState = state;
+    assert(widget.onKeyboard != null);
+    widget.onKeyboard!(state);
+  }
 }
 
 /// OffsetChangeObserver will observe the offset status of the widget.
@@ -184,18 +204,23 @@ class OffsetChangeObserver {
   OffsetChangeObserver({
     required this.context,
     required this.onChanged,
+    this.onKeyboard,
   });
 
   /// context is the context object of the widget that needs to be observed.
   final BuildContext context;
 
   /// Callback method when offset occurs.
-  final OnChanged onChanged;
+  final OffsetChangedCallback onChanged;
+
+  /// Callback method when keyboard state occurs.
+  final KeyboardStateCallback? onKeyboard;
 
   final Duration _resizeOnScrollRefreshRate = const Duration(milliseconds: 500);
   ScrollPosition? _scrollPosition;
   Timer? _resizeOnScrollTimer;
 
+  bool _keyboardMounted = false;
   bool _widgetMounted = true;
   double _boxWidth = 100.0;
   double _boxHeight = 100.0;
@@ -323,6 +348,12 @@ class OffsetChangeObserver {
         rootPadding.right -
         _boxWidth -
         boxAbsX;
+
+    if (_keyboardMounted != 0 < keyboardHeight) {
+      _keyboardMounted = !_keyboardMounted;
+      assert(this.onKeyboard != null);
+      this.onKeyboard!(_keyboardMounted);
+    }
 
     this.onChanged(
         box.size,

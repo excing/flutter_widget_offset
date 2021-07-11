@@ -8,6 +8,11 @@ This type of library is also suitable for dialogs(`showDialog`).
 
 <img src="https://github.com/excing/flutter_widget_offset/raw/main/example/example.gif" width="100%">
 
+## Support
+
+- onChanged: Support monitoring the offset of widgets relative to the edge of the root layout.
+- onKeyboard: Support monitoring soft keyboard status changes (display and hide).
+
 ## Use `OffsetDetector`
 
 Use `OffsetDetector` directly to get the offset of the widget to the edge of the root layout.

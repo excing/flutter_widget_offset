@@ -35,6 +35,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final OffsetDetectorController _controller = OffsetDetectorController();
+  final FocusNode _focusNode = FocusNode();
   final LayerLink _layerLink = LayerLink();
   late OverlayEntry? _overlayEntry;
 
@@ -134,6 +135,14 @@ class _MyHomePageState extends State<MyHomePage> {
     this._overlayEntry!.markNeedsBuild();
   }
 
+  void _onKeyboardState(bool state) {
+    if (state) {
+      _focusNode.requestFocus();
+    } else {
+      _focusNode.unfocus();
+    }
+  }
+
   void _onOffsetChanged(Size size, EdgeInsets offset, EdgeInsets rootPadding) {
     _overlayEntryWidth = size.width;
 
@@ -203,7 +212,9 @@ class _MyHomePageState extends State<MyHomePage> {
               child: OffsetDetector(
                   controller: _controller,
                   onChanged: _onOffsetChanged,
+                  onKeyboard: _onKeyboardState,
                   child: TextField(
+                    focusNode: _focusNode,
                     minLines: 1,
                     maxLines: 5,
                     onChanged: _onTextChanged,

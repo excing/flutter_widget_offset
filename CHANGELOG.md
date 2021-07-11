@@ -1,3 +1,7 @@
+## 1.1.0
+
+- Support monitoring soft keyboard status changes (display and hide).
+
 ## 1.0.5
 
 - format flutter_widget_offset.dart
