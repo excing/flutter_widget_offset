@@ -13,11 +13,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Widget change example',
+      title: 'OffsetDetector example',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Flutter Widget change example'),
+      home: MyHomePage(title: 'OffsetDetector example'),
     );
   }
 }

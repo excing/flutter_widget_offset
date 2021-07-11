@@ -1,3 +1,8 @@
+## 1.0.5
+
+- format flutter_widget_offset.dart
+- update example name
+
 ## 1.0.4
 
 - save each changed value to `controller`.
