@@ -44,8 +44,10 @@ typedef OnChanged = void Function(
 class OffsetDetectorController extends ChangeNotifier {
   /// The [size] is the box size of the [OffsetDetector.child] widget
   Size size = Size.zero;
+
   /// The [offset] is the offset of the the [OffsetDetector.child] widget from the edge of the root layout
   EdgeInsets offset = EdgeInsets.zero;
+
   /// The [rootPadding] is the padding value from the root layout to the edge of the screen.
   EdgeInsets rootPadding = EdgeInsets.zero;
 
