@@ -42,6 +42,13 @@ typedef OnChanged = void Function(
 /// OffsetDetectorController is used to control
 /// and notify the OffsetDetector widget.
 class OffsetDetectorController extends ChangeNotifier {
+  /// The [size] is the box size of the [OffsetDetector.child] widget
+  Size size = Size.zero;
+  /// The [offset] is the offset of the the [OffsetDetector.child] widget from the edge of the root layout
+  EdgeInsets offset = EdgeInsets.zero;
+  /// The [rootPadding] is the padding value from the root layout to the edge of the screen.
+  EdgeInsets rootPadding = EdgeInsets.zero;
+
   /// Notify [OffsetDetector] that the status of his [child] has changed.
   void notifyStateChanged() {
     notifyListeners();
@@ -115,7 +122,7 @@ class _OffsetDetectorState extends State<OffsetDetector>
     super.initState();
     WidgetsBinding.instance!.addObserver(this);
     _observer =
-        OffsetChangeObserver(context: context, onChanged: widget.onChanged);
+        OffsetChangeObserver(context: context, onChanged: _handleChanged);
     _observer.onInitState();
     widget.controller.addListener(_handleChangeState);
   }
@@ -152,6 +159,13 @@ class _OffsetDetectorState extends State<OffsetDetector>
     if (mounted) {
       _observer.onChangeState();
     }
+  }
+
+  void _handleChanged(Size size, EdgeInsets offset, EdgeInsets rootPadding) {
+    widget.controller.size = size;
+    widget.controller.offset = offset;
+    widget.controller.rootPadding = rootPadding;
+    widget.onChanged(size, offset, rootPadding);
   }
 }
 
