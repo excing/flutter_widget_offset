@@ -6,6 +6,8 @@
 A class library for obtaining and listening the offset of the widget to the edge of the root layout.
 This type of library is also suitable for dialogs(`showDialog`).
 
+![](example/example.gif)
+
 ## Use `OffsetDetector`
 
 Use `OffsetDetector` directly to get the offset of the widget to the edge of the root layout.

@@ -2,7 +2,7 @@
 
 A example of flutter_widget_offset
 
-![](example.webm)
+![](example.gif)
 
 ## Getting Started
 
