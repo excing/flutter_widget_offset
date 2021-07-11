@@ -39,6 +39,15 @@ typedef OnChanged = void Function(
   EdgeInsets rootPadding,
 );
 
+/// OffsetDetectorController is used to control
+/// and notify the OffsetDetector widget.
+class OffsetDetectorController extends ChangeNotifier {
+  /// Notify [OffsetDetector] that the status of his [child] has changed.
+  void notifyStateChanged() {
+    notifyListeners();
+  }
+}
+
 /// OffsetDetector is a widget that encapsulates [OffsetChangeObserver].
 ///
 /// When the screen position of [child] changes,
@@ -69,14 +78,22 @@ class OffsetDetector extends StatefulWidget {
   ///
   /// The [onChanged] argument must not be null.
   /// The [child] argument must not be null.
-  OffsetDetector({Key? key, required this.onChanged, required this.child})
-      : super(key: key);
+  OffsetDetector({
+    Key? key,
+    required this.onChanged,
+    required this.child,
+    OffsetDetectorController? controller,
+  })  : this.controller = controller ?? OffsetDetectorController(),
+        super(key: key);
 
   /// Callback method when offset occurs
   final OnChanged onChanged;
 
   /// child is the widget that needs to be observed
   final Widget child;
+
+  /// Controller of OffsetDetector
+  final OffsetDetectorController controller;
 
   @override
   State<StatefulWidget> createState() {
@@ -100,6 +117,16 @@ class _OffsetDetectorState extends State<OffsetDetector>
     _observer =
         OffsetChangeObserver(context: context, onChanged: widget.onChanged);
     _observer.onInitState();
+    widget.controller.addListener(_handleChangeState);
+  }
+
+  @override
+  void didUpdateWidget(covariant OffsetDetector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.controller != oldWidget.controller) {
+      oldWidget.controller.removeListener(_handleChangeState);
+      widget.controller.addListener(_handleChangeState);
+    }
   }
 
   @override
@@ -119,6 +146,12 @@ class _OffsetDetectorState extends State<OffsetDetector>
     _observer.onDispose();
     WidgetsBinding.instance!.removeObserver(this);
     super.dispose();
+  }
+
+  void _handleChangeState() {
+    if (mounted) {
+      _observer.onChangeState();
+    }
   }
 }
 
@@ -167,6 +200,29 @@ class OffsetChangeObserver {
   Future<void> onChangeMetrics() async {
     if (await _waitChangeMetrics()) {
       _resize();
+    }
+  }
+
+  /// Called when the state changes.
+  ///
+  /// It is usually called after the [State.setState] method
+  /// or after updating the content of the widget.
+  ///
+  /// Please do not call it in the [State.didUpdateWidget] method.
+  /// If you must do this, the [State.setState] method must not be called
+  /// in the [onChanged] callback function,
+  /// otherwise infinite recursion will occur.
+  void onChangeState() async {
+    if (!_widgetMounted) return;
+
+    await Future.delayed(const Duration(milliseconds: 50));
+
+    RenderBox? box = context.findRenderObject() as RenderBox?;
+    if (box == null || box.hasSize == false) {
+      return;
+    }
+    if (box.size.width != _boxWidth || box.size.height != _boxHeight) {
+      this._resize();
     }
   }
 
