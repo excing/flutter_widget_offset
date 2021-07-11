@@ -1,6 +1,6 @@
 name: flutter_widget_offset
 description: A class library for obtaining and listening the offset of the widget to the edge of the root layout. This type of library is also suitable for dialogs(`showDialog`).
-version: 1.0.2
+version: 1.0.3
 homepage: https://github.com/excing/flutter_widget_offset
 
 environment:

@@ -1,3 +1,9 @@
+## 1.0.3
+
+- add a method to actively notify the status of `OffsetChangeObserver`
+- add the `OffsetDetectorController` controller to `OffsetDetector`.
+- update example
+
 ## 1.0.2
 
 - format `lib/flutter_widget_offset.dart`
