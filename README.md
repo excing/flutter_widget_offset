@@ -6,14 +6,17 @@
 A class library for obtaining and listening the offset of the widget to the edge of the root layout.
 This type of library is also suitable for dialogs(`showDialog`).
 
-<img src="example/example.gif" width="100%">
+<img src="https://github.com/excing/flutter_widget_offset/raw/main/example/example.gif" width="100%">
 
 ## Use `OffsetDetector`
 
 Use `OffsetDetector` directly to get the offset of the widget to the edge of the root layout.
 
 ```dart
+final OffsetDetectorController? _controller = OffsetDetectorController();
+
 OffsetDetector(
+  controller: _controller,
   onChanged: (Size size, EdgeInsets offset, EdgeInsets rootPadding) {
        print("The widget size: ${size.width}, ${size.height}");
        print(
@@ -23,6 +26,7 @@ OffsetDetector(
    },
   child: TextField(
     style: textFieldStyle,
+    onChanged: (value) => _controller.notifyStateChanged(),
   ));
 ```
 

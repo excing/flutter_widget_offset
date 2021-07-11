@@ -1,3 +1,7 @@
+## 1.0.4
+
+- save each changed value to `controller`.
+
 ## 1.0.3
 
 - add a method to actively notify the status of `OffsetChangeObserver`
