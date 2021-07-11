@@ -2,6 +2,8 @@
 
 A example of flutter_widget_offset
 
+![](example.webm)
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
