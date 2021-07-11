@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -32,8 +30,16 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final ScrollController _scrollController = new ScrollController();
-  final List<String> _logs = [];
+  final OffsetDetectorController _controller = OffsetDetectorController();
+  final LayerLink _layerLink = LayerLink();
+  late OverlayEntry? _overlayEntry;
+
+  double _overlayEntryWidth = 100.0;
+  double _overlayEntryHeight = 100.0;
+  double _overlayEntryY = double.minPositive;
+  AxisDirection _overlayEntryDir = AxisDirection.down;
+
+  bool _isOpened = false;
 
   @override
   void initState() {
@@ -45,82 +51,148 @@ class _MyHomePageState extends State<MyHomePage> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
-  }
 
-  void onOffsetChanged(Size size, EdgeInsets offset, EdgeInsets rootPadding) {
-    setState(() {
-      _logs.add("The widget size: ${size.width}, ${size.height}");
-      _logs.add(
-          "The offset to edge of root(ltrb): ${offset.left}, ${offset.top}, ${offset.right}, ${offset.bottom}");
-      _logs.add(
-          "the root padding: ${rootPadding.left}, ${rootPadding.top}, ${rootPadding.right}, ${rootPadding.bottom}");
-      _logs.add("----------------");
+    WidgetsBinding.instance!.addPostFrameCallback((duration) {
+      if (mounted) {
+        _overlayEntry = OverlayEntry(
+          builder: (context) {
+            // print("build overlay entry, "
+            //     "_overlayEntryWidth: $_overlayEntryWidth, "
+            //     "_overlayEntryHeight: $_overlayEntryHeight, "
+            //     "_overlayEntryY: $_overlayEntryY, "
+            //     "_overlayEntryDir: $_overlayEntryDir");
+            final suggestionsBox = Material(
+              elevation: 2.0,
+              color: Colors.yellow[200],
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: _overlayEntryHeight,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Pop Window",
+                      style: TextStyle(fontSize: 32),
+                    ),
+                  ],
+                ),
+              ),
+            );
+            return Positioned(
+                width: _overlayEntryWidth,
+                child: CompositedTransformFollower(
+                  link: _layerLink,
+                  showWhenUnlinked: false,
+                  followerAnchor: _overlayEntryDir == AxisDirection.down
+                      ? Alignment.topLeft
+                      : Alignment.bottomLeft,
+                  targetAnchor: Alignment.bottomLeft,
+                  offset: Offset(0.0, _overlayEntryY),
+                  child: suggestionsBox,
+                ));
+          },
+        );
+      }
     });
-    _scrollToBottom();
   }
 
-  void _scrollToBottom() {
-    Timer(
-        Duration(milliseconds: 300),
-        () => _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInBack));
+  void _openSuggestionBox() {
+    if (this._isOpened) return;
+    assert(this._overlayEntry != null);
+    Overlay.of(context)!.insert(this._overlayEntry!);
+    setState(() {
+      this._isOpened = true;
+    });
+  }
+
+  void _closeSuggestionBox() {
+    if (!this._isOpened) return;
+    assert(this._overlayEntry != null);
+    this._overlayEntry!.remove();
+    setState(() {
+      this._isOpened = false;
+    });
+  }
+
+  void _onOffsetChanged(Size size, EdgeInsets offset, EdgeInsets rootPadding) {
+    _overlayEntryWidth = size.width;
+
+    print("offset top: ${offset.top}, offset bottom: ${offset.bottom}");
+    if (120 < offset.bottom || offset.top < offset.bottom) {
+      _overlayEntryDir = AxisDirection.down;
+      _overlayEntryHeight = offset.bottom - 10;
+      _overlayEntryY = 5;
+    } else {
+      _overlayEntryDir = AxisDirection.up;
+      _overlayEntryHeight = offset.top - 10;
+      _overlayEntryY = -size.height - 5;
+    }
+
+    assert(_overlayEntry != null);
+    _overlayEntry!.markNeedsBuild();
+  }
+
+  void _onTextChanged(String value) {
+    if (value.isEmpty) {
+      _closeSuggestionBox();
+    } else {
+      if (_isOpened) {
+        _controller.notifyStateChanged();
+      } else {
+        _openSuggestionBox();
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final textFieldStyle = Theme.of(context).textTheme.bodyText1;
+    final textFieldStyle = Theme.of(context).textTheme.headline5;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
+        actions: [
+          Switch(
+            value: _isOpened,
+            onChanged: (value) {
+              if (value)
+                _openSuggestionBox();
+              else
+                _closeSuggestionBox();
+            },
+          ),
+        ],
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Expanded(
-                child: ListView.builder(
-              controller: _scrollController,
-              itemCount: _logs.length,
-              itemBuilder: (context, index) {
-                return Text(_logs[index]);
-              },
-            )),
-            Padding(
-              padding: EdgeInsets.fromLTRB(8, 0, 8, 3),
+        child: Padding(
+          padding: EdgeInsets.all(3),
+          child: CompositedTransformTarget(
+            link: _layerLink,
+            child: Container(
               child: OffsetDetector(
-                  onChanged: onOffsetChanged,
+                  controller: _controller,
+                  onChanged: _onOffsetChanged,
                   child: TextField(
+                    minLines: 1,
+                    maxLines: 5,
+                    onChanged: _onTextChanged,
                     style: textFieldStyle,
+                    textInputAction: TextInputAction.none,
+                    decoration: InputDecoration(
+                      hintText: "Write something",
+                    ),
                   )),
             ),
-          ],
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showDialog<String>(
-            context: context,
-            builder: (BuildContext ctx) => AlertDialog(
-              title: const Text('Submit comment'),
-              content: OffsetDetector(
-                  onChanged: onOffsetChanged,
-                  child: TextField(
-                    style: textFieldStyle,
-                  )),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => _scrollToBottom(),
-                  child: const Text('Cancel'),
-                ),
-              ],
-            ),
-          );
-        },
-        tooltip: 'Screen rotation',
-        child: Icon(Icons.insert_comment),
-      ),
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }
