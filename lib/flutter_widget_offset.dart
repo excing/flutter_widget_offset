@@ -134,7 +134,7 @@ class _OffsetDetectorState extends State<OffsetDetector>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance!.addObserver(this);
+    WidgetsBinding.instance.addObserver(this);
     _observer = OffsetChangeObserver(
         context: context,
         onChanged: _handleChanged,
@@ -167,7 +167,7 @@ class _OffsetDetectorState extends State<OffsetDetector>
   @override
   void dispose() {
     _observer.onDispose();
-    WidgetsBinding.instance!.removeObserver(this);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -229,7 +229,7 @@ class OffsetChangeObserver {
   ///
   /// It is usually called in the [State.initState] method of [State].
   void onInitState() {
-    WidgetsBinding.instance!.addPostFrameCallback((duration) {
+    WidgetsBinding.instance.addPostFrameCallback((duration) {
       // calculate initial suggestions list size
       this._resize();
     });
